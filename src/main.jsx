@@ -256,7 +256,7 @@ function MiniMetric({ label, value }) {
 
 function ProjectOverview({ setPage }) {
   return (
-    <Panel title="项目总览" subtitle="按老板关心的信息展示，不做任务流水">
+    <Panel title="项目总览">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1180px] border-collapse text-sm">
           <thead>
