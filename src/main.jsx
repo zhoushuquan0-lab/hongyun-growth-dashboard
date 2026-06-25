@@ -422,12 +422,18 @@ function AssetSections({ onlyBrand }) {
   });
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      <Panel title="品牌内容资产库" subtitle="品牌账号入口，后续替换真实链接">
+      <Panel title="品牌内容资产库" subtitle="品牌账号入口，点击后新窗口打开小红书主页">
         <div className="space-y-3">
           {accounts.map(account => (
-            <a key={account.name} href={account.url} className="block rounded-lg border border-line bg-soft p-4 hover:border-blue-300">
+            <a
+              key={account.name}
+              href={account.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-lg border border-line bg-soft p-4 hover:border-blue-300"
+            >
               <div className="text-xs font-semibold text-muted">{account.brand}</div>
-              <div className="mt-1 font-bold text-blue-700">{account.name}</div>
+              <div className="mt-1 font-bold text-blue-700">{account.name} ↗</div>
             </a>
           ))}
         </div>
