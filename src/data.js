@@ -31,7 +31,7 @@ export const focusProjects = [
     reads: 318922,
     interactions: 24426,
     search90d: 3109,
-    searchGrowth90d: "638.99%",
+    searchGrowth90d: "+638.99%",
     taobaoSearch: "待补充",
     taobaoSalesGrowth30d: "待补充",
     manningSalesGrowth90d: "待补充",
@@ -72,7 +72,7 @@ export const focusProjects = [
     reads: 53980,
     interactions: 4607,
     search90d: 1423,
-    searchGrowth90d: "22.83%",
+    searchGrowth90d: "+22.83%",
     taobaoSearch: "待补充",
     taobaoSalesGrowth30d: "待补充",
     manningSalesGrowth90d: "待补充",
