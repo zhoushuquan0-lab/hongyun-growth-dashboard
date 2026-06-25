@@ -1,5 +1,5 @@
 export const dashboardMeta = {
-  title: "鸿运集团增长看板",
+  title: "周树权工作看板",
   version: "V0.1",
   updatedAt: "2026-06-26",
   owner: "周树权",
