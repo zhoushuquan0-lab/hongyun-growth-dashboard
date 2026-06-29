@@ -115,6 +115,11 @@ function Panel({ title, subtitle, children, action }) {
 }
 
 function Home({ setPage }) {
+  const [brandBatchFilter, setBrandBatchFilter] = useState("全部月份");
+  const brandBatchOptions = useMemo(
+    () => ["全部月份", ...new Set(creatorAssets.map(item => item.batch || "待补充"))],
+    []
+  );
   const stats = useMemo(
     () => [
       ["累计增长投入", money(dashboardKpis.totalInvestment)],
@@ -160,10 +165,22 @@ function Home({ setPage }) {
         </div>
       </Panel>
 
-      <Panel title="分品牌数据总览" subtitle="按品牌查看增长投入、内容成果和搜索/销售反馈">
+      <Panel
+        title="分品牌数据总览"
+        subtitle="按品牌查看增长投入、内容成果和搜索/销售反馈"
+        action={
+          <select
+            value={brandBatchFilter}
+            onChange={event => setBrandBatchFilter(event.target.value)}
+            className="no-print rounded-md border border-line bg-white px-3 py-2 text-sm"
+          >
+            {brandBatchOptions.map(option => <option key={option}>{option}</option>)}
+          </select>
+        }
+      >
         <div className="grid gap-4 lg:grid-cols-2">
-          <BrandOverviewCard brand="公牛牌" setPage={setPage} />
-          <BrandOverviewCard brand="济众堂" setPage={setPage} />
+          <BrandOverviewCard brand="公牛牌" selectedBatch={brandBatchFilter} setPage={setPage} />
+          <BrandOverviewCard brand="济众堂" selectedBatch={brandBatchFilter} setPage={setPage} />
         </div>
       </Panel>
 
@@ -202,14 +219,30 @@ function Home({ setPage }) {
   );
 }
 
-function BrandOverviewCard({ brand, setPage }) {
+function BrandOverviewCard({ brand, selectedBatch, setPage }) {
   const brandProjects = focusProjects.filter(item => item.brandGroup === brand);
   const mainProject = brandProjects[0];
-  const investment = brandProjects.reduce((sum, item) => sum + (item.investment || 0), 0);
-  const notes = brandProjects.reduce((sum, item) => sum + (item.notes || 0), 0);
-  const exposure = brandProjects.reduce((sum, item) => sum + (item.exposure || 0), 0);
-  const reads = brandProjects.reduce((sum, item) => sum + (item.reads || 0), 0);
-  const interactions = brandProjects.reduce((sum, item) => sum + (item.interactions || 0), 0);
+  const filteredAssets = creatorAssets.filter(item => {
+    const brandOk = item.brand === brand;
+    const batchOk = selectedBatch === "全部月份" || (item.batch || "待补充") === selectedBatch;
+    return brandOk && batchOk;
+  });
+  const useAssetData = selectedBatch !== "全部月份";
+  const investment = useAssetData
+    ? filteredAssets.reduce((sum, item) => sum + (item.cost || 0), 0)
+    : brandProjects.reduce((sum, item) => sum + (item.investment || 0), 0);
+  const notes = useAssetData
+    ? filteredAssets.length
+    : brandProjects.reduce((sum, item) => sum + (item.notes || 0), 0);
+  const exposure = useAssetData
+    ? filteredAssets.reduce((sum, item) => sum + (item.exposure || 0), 0)
+    : brandProjects.reduce((sum, item) => sum + (item.exposure || 0), 0);
+  const reads = useAssetData
+    ? filteredAssets.reduce((sum, item) => sum + (item.reads || 0), 0)
+    : brandProjects.reduce((sum, item) => sum + (item.reads || 0), 0);
+  const interactions = useAssetData
+    ? filteredAssets.reduce((sum, item) => sum + (item.interactions || 0), 0)
+    : brandProjects.reduce((sum, item) => sum + (item.interactions || 0), 0);
   const targetPage = brand === "公牛牌" ? "bull" : "jzt";
 
   return (
@@ -217,7 +250,9 @@ function BrandOverviewCard({ brand, setPage }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-bold text-ink">{brand}数据总览</h3>
-          <p className="mt-1 text-xs text-muted">{brandProjects.map(item => item.name).join(" / ")}</p>
+          <p className="mt-1 text-xs text-muted">
+            {selectedBatch === "全部月份" ? brandProjects.map(item => item.name).join(" / ") : selectedBatch}
+          </p>
         </div>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
