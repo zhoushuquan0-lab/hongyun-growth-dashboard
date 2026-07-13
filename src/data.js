@@ -7,7 +7,7 @@ export const dashboardMeta = {
 };
 
 export const dashboardKpis = {
-  totalInvestment: 124010,
+  totalInvestment: 133470,
   totalNotes: 85,
   totalExposure: 2007286,
   totalReads: 372902,
@@ -24,7 +24,7 @@ export const focusProjects = [
     statusText: "待推进/有风险",
     stage: "6月-7月第三批种草推进中，投流资质认证待完善",
     owner: "周树权",
-    investment: 106780,
+    investment: 116240,
     notes: 61,
     videos: null,
     exposure: 1704401,
@@ -44,7 +44,7 @@ export const focusProjects = [
     background: "公牛牌风痛灵当前已完成多轮种草，下一阶段重点是补齐投流资质，将已有内容资产放大到品牌搜索和万宁销售转化。",
     path: ["小红书种草", "提升品牌知名度", "香港游客/本地用户", "万宁购买", "销量增长"],
     costItems: [
-      { name: "5月 Agency 种草", amount: 62040 },
+      { name: "5月 Agency 种草", amount: 71500 },
       { name: "6-7月 第一~三批达人", amount: 44740 }
     ],
     contentProgress: [
