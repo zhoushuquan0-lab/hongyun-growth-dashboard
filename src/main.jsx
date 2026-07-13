@@ -228,8 +228,15 @@ function BrandOverviewCard({ brand, selectedBatch, setPage }) {
     return brandOk && batchOk;
   });
   const useAssetData = selectedBatch !== "全部月份";
+  const hasBatchInvestment = brandProjects.some(item => item.batchInvestments?.[selectedBatch] != null);
+  const batchInvestment = brandProjects.reduce(
+    (sum, item) => sum + (item.batchInvestments?.[selectedBatch] || 0),
+    0
+  );
   const investment = useAssetData
-    ? filteredAssets.reduce((sum, item) => sum + (item.cost || 0), 0)
+    ? hasBatchInvestment
+      ? batchInvestment
+      : filteredAssets.reduce((sum, item) => sum + (item.cost || 0), 0)
     : brandProjects.reduce((sum, item) => sum + (item.investment || 0), 0);
   const notes = useAssetData
     ? filteredAssets.length

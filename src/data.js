@@ -47,6 +47,10 @@ export const focusProjects = [
       { name: "5月 Agency 种草", amount: 71500 },
       { name: "6-7月 第一~三批达人", amount: 44740 }
     ],
+    batchInvestments: {
+      "5月投放笔记": 71500,
+      "6-7月投放笔记": 44740
+    },
     contentProgress: [
       { label: "小红书笔记", value: "61篇" },
       { label: "投流状态", value: "资质认证待完善" },
