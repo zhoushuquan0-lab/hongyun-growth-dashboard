@@ -1,7 +1,7 @@
 export const dashboardMeta = {
   title: "周树权工作看板",
-  version: "V0.1.1",
-  updatedAt: "2026-07-13",
+  version: "V0.1.2",
+  updatedAt: "2026-07-14",
   owner: "周树权",
   coreGoals: ["提升品牌知名度", "提升万宁渠道销量", "推动线上电商增长"]
 };
@@ -22,7 +22,7 @@ export const focusProjects = [
     shortGoal: "通过小红书种草与投流放大，提升品牌搜索和万宁渠道销售转化。",
     status: "yellow",
     statusText: "待推进/有风险",
-    stage: "6月-7月第三批种草推进中，投流资质认证待完善",
+    stage: "6月三批种草已完成，7月暂无新增笔记；投流资质认证待完善",
     owner: "周树权",
     investment: 116240,
     notes: 61,
@@ -35,21 +35,22 @@ export const focusProjects = [
     taobaoSearch: "待补充",
     taobaoSalesGrowth30d: "待补充",
     manningSalesGrowth90d: "待补充",
-    weeklyResult: "已完成5月种草，6-7月两轮种草，累计形成61篇内容资产。",
-    completed: ["5月 Agency 种草", "6-7月两轮达人种草", "61篇小红书内容资产"],
+    weeklyResult: "已完成5月、6月种草；7月暂无新增笔记，累计形成61篇内容资产。",
+    completed: ["5月 Agency 种草", "6月三批达人种草", "61篇小红书内容资产"],
     currentResult: "累计曝光1,704,401；累计阅读318,922；累计互动24,426；近90天品牌搜索量3,109。",
     risk: "聚光投流资质未完成，影响投流启动和投放效果最大化。",
     next: "准备康活健独家授权公牛牌销售授权书、康活健食品厂谷歌地图认证，补齐资质后提交投流认证。",
-    bossSupport: "确认投流资质与6月-7月第一批水下笔记达人费用结算。",
+    bossSupport: "确认投流资质与6月水下笔记达人费用结算。",
     background: "公牛牌风痛灵当前已完成多轮种草，下一阶段重点是补齐投流资质，将已有内容资产放大到品牌搜索和万宁销售转化。",
     path: ["小红书种草", "提升品牌知名度", "香港游客/本地用户", "万宁购买", "销量增长"],
     costItems: [
       { name: "5月 Agency 种草", amount: 71500 },
-      { name: "6-7月 第一~三批达人", amount: 44740 }
+      { name: "6月 第一~三批达人", amount: 44740 }
     ],
     batchInvestments: {
       "5月投放笔记": 71500,
-      "6-7月投放笔记": 44740
+      "6月投放笔记": 44740,
+      "7月投放笔记": 0
     },
     contentProgress: [
       { label: "小红书笔记", value: "61篇" },
@@ -185,7 +186,7 @@ export const brandAccounts = [
   }
 ];
 
-export const creatorAssets = [
+const creatorAssetsRaw = [
   {
     "project": "公牛牌风痛灵",
     "brand": "公牛牌",
@@ -1390,8 +1391,20 @@ export const creatorAssets = [
     "interactions": 159,
     "status": "已导入Excel数据"
   }
-]
-;
+];
+
+// 原“6-7月”批次的42条笔记经小红书笔记ID/短链接核对，
+// 实际发布时间均为2026年6月；7月当前没有已发布记录。
+export const creatorAssets = creatorAssetsRaw.map(item => ({
+  ...item,
+  batch: item.batch === "6-7月投放笔记" ? "6月投放笔记" : item.batch,
+  publishedMonth:
+    item.batch === "5月投放笔记"
+      ? "2026-05"
+      : item.batch === "6-7月投放笔记"
+        ? "2026-06"
+        : null
+}));
 
 export const risks = [
   {

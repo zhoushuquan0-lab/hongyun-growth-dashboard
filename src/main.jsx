@@ -32,6 +32,18 @@ const priorityStyles = {
   P2: "bg-blue-50 text-blue-700 ring-blue-200"
 };
 
+const campaignBatchOptions = ["5月投放笔记", "6月投放笔记", "7月投放笔记"];
+
+function getBatchOptions(assets) {
+  return [
+    "全部月份",
+    ...new Set([
+      ...campaignBatchOptions,
+      ...assets.map(item => item.batch || "待补充")
+    ])
+  ];
+}
+
 function money(value) {
   if (value === null || value === undefined) return "待补充";
   return `¥${new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(value)}`;
@@ -117,7 +129,7 @@ function Panel({ title, subtitle, children, action }) {
 function Home({ setPage }) {
   const [brandBatchFilter, setBrandBatchFilter] = useState("全部月份");
   const brandBatchOptions = useMemo(
-    () => ["全部月份", ...new Set(creatorAssets.map(item => item.batch || "待补充"))],
+    () => getBatchOptions(creatorAssets),
     []
   );
   const stats = useMemo(
@@ -263,11 +275,11 @@ function BrandOverviewCard({ brand, selectedBatch, setPage }) {
         </div>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <MiniMetric label="累计增长投入" value={investment ? money(investment) : "待补充"} />
-        <MiniMetric label="小红书累计笔记" value={notes ? number(notes, "篇") : "待补充"} />
-        <MiniMetric label="小红书累计曝光" value={exposure ? number(exposure) : "待补充"} />
-        <MiniMetric label="小红书累计阅读" value={reads ? number(reads) : "待补充"} />
-        <MiniMetric label="小红书累计互动" value={interactions ? number(interactions) : "待补充"} />
+        <MiniMetric label="累计增长投入" value={useAssetData ? money(investment) : investment ? money(investment) : "待补充"} />
+        <MiniMetric label="小红书累计笔记" value={useAssetData ? number(notes, "篇") : notes ? number(notes, "篇") : "待补充"} />
+        <MiniMetric label="小红书累计曝光" value={useAssetData ? number(exposure) : exposure ? number(exposure) : "待补充"} />
+        <MiniMetric label="小红书累计阅读" value={useAssetData ? number(reads) : reads ? number(reads) : "待补充"} />
+        <MiniMetric label="小红书累计互动" value={useAssetData ? number(interactions) : interactions ? number(interactions) : "待补充"} />
         <MiniMetric label="近90天品牌搜索量" value={mainProject?.search90d ? number(mainProject.search90d) : "待补充"} />
         <MiniMetric label="近90天品牌搜索环比" value={mainProject?.searchGrowth90d || "待补充"} />
         <MiniMetric label="淘宝搜索人气值" value={mainProject?.taobaoSearch || "待补充"} />
@@ -454,7 +466,7 @@ function AssetSections({ onlyBrand }) {
   const accounts = onlyBrand ? brandAccounts.filter(item => item.brand === onlyBrand) : brandAccounts;
   const baseAssets = onlyBrand ? creatorAssets.filter(item => item.brand === onlyBrand) : creatorAssets;
   const projectOptions = ["全部项目", ...new Set(baseAssets.map(item => item.project))];
-  const batchOptions = ["全部月份", ...new Set(baseAssets.map(item => item.batch || "待补充"))];
+  const batchOptions = getBatchOptions(baseAssets);
   const brandOptions = onlyBrand ? [onlyBrand] : ["全部品牌", ...new Set(baseAssets.map(item => item.brand))];
   const assets = baseAssets.filter(item => {
     const brandOk = brandFilter === "全部品牌" || item.brand === brandFilter;
