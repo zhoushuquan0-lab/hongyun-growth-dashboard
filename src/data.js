@@ -1,6 +1,6 @@
 export const dashboardMeta = {
   title: "周树权工作看板",
-  version: "V0.2",
+  version: "V0.3",
   updatedAt: "2026-07-15",
   owner: "周树权",
   coreGoals: ["提升品牌知名度", "提升万宁渠道销量", "推动线上电商增长"]

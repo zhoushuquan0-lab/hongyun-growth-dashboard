@@ -13,6 +13,7 @@ import {
   salesMeta,
   supportItems
 } from "./data.js";
+import { salesChannels, salesChannelRows } from "./sales-channel-data.js";
 
 const statusStyles = {
   green: "bg-green-50 text-green-700 ring-green-200",
@@ -89,7 +90,7 @@ function Shell({ page, setPage, children }) {
     ["overview", "项目总览"],
     ["bull", "公牛牌"],
     ["jzt", "济众堂"],
-    ["sales", "销售趋势"],
+    ["sales", "销售分析"],
     ["risks", "风险中心"],
     ["support", "资源需求"],
     ["ai", "AI问答"]
@@ -597,51 +598,94 @@ function SupportPage() {
   );
 }
 
-function SalesTrendChart() {
+const productOptions = ["全部产品", "公牛牌风痛灵", "济众堂百步追风活络油"];
+const channelColors = {
+  "万宁": "#2563EB",
+  "药房及本地零售": "#16A34A",
+  "电商": "#F97316",
+  "国际及其他客户": "#7C3AED",
+  "公牛牌风痛灵": "#1D4ED8",
+  "济众堂百步追风活络油": "#F97316"
+};
+
+function salesValue(row, product, metric, kind = "value") {
+  const isBull = product === "公牛牌风痛灵";
+  if (kind === "customers") return row[isBull ? 6 : 7];
+  if (kind === "orders") return row[isBull ? 8 : 9];
+  if (kind === "returnAmount") return row[isBull ? 10 : 11];
+  if (kind === "returnQty") return row[isBull ? 12 : 13];
+  return row[metric === "销售额" ? (isBull ? 2 : 3) : (isBull ? 4 : 5)];
+}
+
+function sumRow(row, product, metric, kind = "value") {
+  return product === "全部产品"
+    ? salesValue(row, "公牛牌风痛灵", metric, kind) + salesValue(row, "济众堂百步追风活络油", metric, kind)
+    : salesValue(row, product, metric, kind);
+}
+
+function monthsForPeriod(period) {
+  const all = monthlySales.map(item => item.month);
+  if (period === "最近6个月") return all.slice(-6);
+  if (period === "最近12个月") return all.slice(-12);
+  if (period === "2025年") return all.filter(month => month.startsWith("2025"));
+  if (period === "2026年") return all.filter(month => month.startsWith("2026"));
+  return all;
+}
+
+function metricText(value, metric) {
+  return metric === "销售额" ? hkMoney(value) : `${number(value)}件`;
+}
+
+function SalesTrendChart({ months, product, channel, metric }) {
   const width = 1000;
   const height = 360;
-  const margin = { top: 20, right: 24, bottom: 54, left: 76 };
+  const margin = { top: 20, right: 24, bottom: 54, left: 82 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
-  const maxValue = Math.ceil(Math.max(...monthlySales.flatMap(item => [item.bullAmount, item.oilAmount])) / 100000) * 100000;
-  const x = index => margin.left + (index / (monthlySales.length - 1)) * plotWidth;
-  const y = value => margin.top + plotHeight - (value / maxValue) * plotHeight;
-  const bullPoints = monthlySales.map((item, index) => `${x(index)},${y(item.bullAmount)}`).join(" ");
-  const oilPoints = monthlySales.map((item, index) => `${x(index)},${y(item.oilAmount)}`).join(" ");
+  let names;
+  if (product === "全部产品") names = ["公牛牌风痛灵", "济众堂百步追风活络油"];
+  else if (channel === "全部渠道") names = salesChannels;
+  else names = [product];
+  const series = names.map(name => ({
+    name,
+    color: channelColors[name],
+    values: months.map(month => salesChannelRows
+      .filter(row => row[0] === month && row[1] === (product !== "全部产品" && channel === "全部渠道" ? name : channel === "全部渠道" ? row[1] : channel))
+      .reduce((sum, row) => sum + salesValue(row, product === "全部产品" ? name : product, metric), 0))
+  }));
+  const rawMax = Math.max(1, ...series.flatMap(item => item.values));
+  const maxValue = metric === "销售额" ? Math.ceil(rawMax / 100000) * 100000 : Math.ceil(rawMax / 500) * 500;
+  const x = index => margin.left + (months.length === 1 ? plotWidth / 2 : (index / (months.length - 1)) * plotWidth);
+  const y = value => margin.top + plotHeight - (Math.max(0, value) / maxValue) * plotHeight;
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(ratio => ratio * maxValue);
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap gap-5 text-sm">
-        <div className="flex items-center gap-2"><span className="h-0.5 w-6 bg-blue-700" />公牛牌风痛灵</div>
-        <div className="flex items-center gap-2"><span className="h-0.5 w-6 bg-orange-500" />济众堂百步追风活络油</div>
+      <div className="mb-3 flex flex-wrap gap-4 text-sm">
+        {series.map(item => (
+          <div key={item.name} className="flex items-center gap-2"><span className="h-0.5 w-6" style={{ background: item.color }} />{item.name}</div>
+        ))}
       </div>
       <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[760px]" role="img" aria-label="2025年4月至2026年6月两款产品月度销售额趋势，单位为港币">
-          <title>月度销售额趋势（港币）</title>
+        <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[760px]" role="img" aria-label={`月度${metric}趋势`}>
+          <title>鼠标停留在数据点可查看月度数值</title>
           {yTicks.map(tick => (
             <g key={tick}>
-              <line x1={margin.left} x2={width - margin.right} y1={y(tick)} y2={y(tick)} stroke="#E4E7EC" strokeWidth="1" />
+              <line x1={margin.left} x2={width - margin.right} y1={y(tick)} y2={y(tick)} stroke="#E4E7EC" />
               <text x={margin.left - 12} y={y(tick) + 4} textAnchor="end" fontSize="12" fill="#667085">
-                {tick === 0 ? "HK$0" : `HK$${Math.round(tick / 1000)}k`}
+                {metric === "销售额" ? (tick === 0 ? "HK$0" : `HK$${Math.round(tick / 1000)}k`) : number(Math.round(tick))}
               </text>
             </g>
           ))}
-          {monthlySales.map((item, index) => (
-            <text key={item.month} x={x(index)} y={height - 20} textAnchor="middle" fontSize="11" fill="#667085">
-              {item.month.slice(2)}
-            </text>
-          ))}
-          <polyline points={bullPoints} fill="none" stroke="#1D4ED8" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
-          <polyline points={oilPoints} fill="none" stroke="#F97316" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
-          {monthlySales.map((item, index) => (
-            <g key={`points-${item.month}`}>
-              <circle cx={x(index)} cy={y(item.bullAmount)} r="4" fill="#1D4ED8">
-                <title>{`${item.month} 公牛牌风痛灵：${hkMoney(item.bullAmount)}`}</title>
-              </circle>
-              <circle cx={x(index)} cy={y(item.oilAmount)} r="4" fill="#F97316">
-                <title>{`${item.month} 济众堂百步追风活络油：${hkMoney(item.oilAmount)}`}</title>
-              </circle>
+          {months.map((month, index) => <text key={month} x={x(index)} y={height - 20} textAnchor="middle" fontSize="11" fill="#667085">{month.slice(2)}</text>)}
+          {series.map(item => (
+            <g key={item.name}>
+              <polyline points={item.values.map((value, index) => `${x(index)},${y(value)}`).join(" ")} fill="none" stroke={item.color} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+              {item.values.map((value, index) => (
+                <circle key={`${item.name}-${months[index]}`} cx={x(index)} cy={y(value)} r="4.5" fill={item.color} className="cursor-pointer">
+                  <title>{`${months[index]} ${item.name}：${metricText(value, metric)}`}</title>
+                </circle>
+              ))}
             </g>
           ))}
         </svg>
@@ -650,62 +694,135 @@ function SalesTrendChart() {
   );
 }
 
+function ChannelStructureChart({ months, product, metric, selectedChannel, setChannel }) {
+  const monthData = months.map(month => {
+    const values = salesChannels.map(channel => ({
+      channel,
+      value: salesChannelRows.filter(row => row[0] === month && row[1] === channel).reduce((sum, row) => sum + sumRow(row, product, metric), 0)
+    }));
+    return { month, values, total: values.reduce((sum, item) => sum + Math.max(0, item.value), 0) };
+  });
+  const maxTotal = Math.max(1, ...monthData.map(item => item.total));
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap gap-3 text-xs">
+        {salesChannels.map(channel => (
+          <button key={channel} onClick={() => setChannel(selectedChannel === channel ? "全部渠道" : channel)} className={`flex items-center gap-2 rounded-full border px-3 py-1.5 ${selectedChannel === channel ? "border-slate-700 bg-slate-100 font-semibold" : "border-line bg-white"}`}>
+            <span className="h-2.5 w-2.5 rounded-sm" style={{ background: channelColors[channel] }} />{channel}
+          </button>
+        ))}
+      </div>
+      <div className="flex h-64 min-w-[720px] items-end gap-3 border-b border-line px-2">
+        {monthData.map(item => (
+          <div key={item.month} className="flex h-full flex-1 flex-col justify-end text-center">
+            <div className="mx-auto flex w-full max-w-12 flex-col-reverse overflow-hidden rounded-t-sm" style={{ height: `${Math.max(2, (item.total / maxTotal) * 88)}%` }}>
+              {item.values.map(segment => segment.value > 0 ? (
+                <button key={segment.channel} onClick={() => setChannel(segment.channel)} style={{ background: channelColors[segment.channel], height: `${(segment.value / item.total) * 100}%`, opacity: selectedChannel === "全部渠道" || selectedChannel === segment.channel ? 1 : 0.25 }}>
+                  <title>{`${item.month} ${segment.channel}：${metricText(segment.value, metric)}（${((segment.value / item.total) * 100).toFixed(1)}%）`}</title>
+                </button>
+              ) : null)}
+            </div>
+            <div className="mt-2 text-[11px] text-muted">{item.month.slice(2)}</div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-xs text-muted">点击图例、柱形分段或下方渠道表，可联动筛选销售趋势。</p>
+    </div>
+  );
+}
+
 function SalesPage() {
-  const latest = monthlySales[monthlySales.length - 1];
-  const previous = monthlySales[monthlySales.length - 2];
-  const latestTotal = latest.bullAmount + latest.oilAmount;
-  const previousTotal = previous.bullAmount + previous.oilAmount;
-  const totalMoM = latestTotal / previousTotal - 1;
-  const bullMoM = latest.bullAmount / previous.bullAmount - 1;
-  const oilMoM = latest.oilAmount / previous.oilAmount - 1;
-  const recentRows = monthlySales.slice(-6).reverse();
+  const [period, setPeriod] = useState("最近12个月");
+  const [product, setProduct] = useState("全部产品");
+  const [channel, setChannel] = useState("全部渠道");
+  const [metric, setMetric] = useState("销售额");
+  const months = monthsForPeriod(period);
+  const rows = salesChannelRows.filter(row => months.includes(row[0]) && (channel === "全部渠道" || row[1] === channel));
+  const monthlyValues = months.map(month => rows.filter(row => row[0] === month).reduce((sum, row) => sum + sumRow(row, product, metric), 0));
+  const latestValue = monthlyValues[monthlyValues.length - 1] || 0;
+  const previousValue = monthlyValues[monthlyValues.length - 2] || 0;
+  const latestMoM = previousValue ? latestValue / previousValue - 1 : NaN;
+  const periodTotal = monthlyValues.reduce((sum, value) => sum + value, 0);
+  const channelSummary = salesChannels.map(name => {
+    const channelRows = salesChannelRows.filter(row => months.includes(row[0]) && row[1] === name);
+    const amount = channelRows.reduce((sum, row) => sum + sumRow(row, product, "销售额"), 0);
+    const qty = channelRows.reduce((sum, row) => sum + sumRow(row, product, "开票数量"), 0);
+    const latestRows = channelRows.filter(row => row[0] === months[months.length - 1]);
+    const latestAmount = latestRows.reduce((sum, row) => sum + sumRow(row, product, "销售额"), 0);
+    const customers = latestRows.reduce((sum, row) => sum + sumRow(row, product, "销售额", "customers"), 0);
+    const orders = channelRows.reduce((sum, row) => sum + sumRow(row, product, "销售额", "orders"), 0);
+    return { name, amount, qty, latestAmount, customers, orders };
+  }).sort((a, b) => b.amount - a.amount);
+  const channelTotal = channelSummary.reduce((sum, item) => sum + item.amount, 0);
+  const leader = channel === "全部渠道" ? channelSummary[0] : channelSummary.find(item => item.name === channel);
+  const returns = salesChannelRows.filter(row => months.includes(row[0]) && (channel === "全部渠道" || row[1] === channel))
+    .map(row => ({ month: row[0], channel: row[1], amount: sumRow(row, product, "销售额", "returnAmount"), qty: sumRow(row, product, "销售额", "returnQty") }))
+    .filter(item => item.amount < 0 || item.qty < 0);
 
   return (
     <div className="space-y-5">
-      <Panel title="销售趋势" subtitle={`${salesMeta.period}｜币种：港币｜数据更新至${salesMeta.latestMonth}`}>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <MiniMetric label="2026年6月总销售额" value={hkMoney(latestTotal)} />
-          <MiniMetric label="总销售额月环比" value={percent(totalMoM)} />
-          <MiniMetric label="公牛牌6月销售额" value={`${hkMoney(latest.bullAmount)}｜${percent(bullMoM)}`} />
-          <MiniMetric label="活络油6月销售额" value={`${hkMoney(latest.oilAmount)}｜${percent(oilMoM)}`} />
+      <Panel title="全渠道销售分析" subtitle={`${salesMeta.period}｜数据更新至${salesMeta.latestMonth}｜币种：港币`}>
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <FilterSelect label="时间范围" value={period} setValue={setPeriod} options={["最近6个月", "最近12个月", "全部时间", "2025年", "2026年"]} />
+          <FilterSelect label="产品" value={product} setValue={setProduct} options={productOptions} />
+          <FilterSelect label="渠道" value={channel} setValue={setChannel} options={["全部渠道", ...salesChannels]} />
+          <FilterSelect label="观察指标" value={metric} setValue={setMetric} options={["销售额", "开票数量"]} />
         </div>
-        <p className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm leading-6 text-yellow-900">
-          6月总销售额较5月下降{Math.abs(totalMoM * 100).toFixed(1)}%。其中公牛牌下降{Math.abs(bullMoM * 100).toFixed(1)}%，活络油下降{Math.abs(oilMoM * 100).toFixed(1)}%；活络油6月包含万宁退货326件，净开票数量为-31。
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <MiniMetric label={`${period}${metric}`} value={metricText(periodTotal, metric)} />
+          <MiniMetric label={`${months[months.length - 1]} ${metric}`} value={metricText(latestValue, metric)} />
+          <MiniMetric label="最新月环比" value={percent(latestMoM)} />
+          <MiniMetric label={channel === "全部渠道" ? "筛选期第一渠道" : "所选渠道销售占比"} value={leader ? `${leader.name}｜${channelTotal ? ((leader.amount / channelTotal) * 100).toFixed(1) : 0}%` : "待补充"} />
+        </div>
+        <p className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
+          本页统计口径为公司开票／出货销售，不等同于终端消费者动销；退货及冲销按净额计入。
         </p>
       </Panel>
 
-      <Panel title="月度销售额趋势（港币）" subtitle="双产品按月对比，后续每月追加当月销售数据">
-        <SalesTrendChart />
+      <Panel title={`月度${metric}趋势`} subtitle="筛选条件会同步影响趋势、指标与明细；鼠标停留在数据点可查看数值">
+        <SalesTrendChart months={months} product={product} channel={channel} metric={metric} />
       </Panel>
 
-      <Panel title="最近6个月销售明细" subtitle={salesMeta.note}>
+      <div className="grid gap-5 xl:grid-cols-5">
+        <div className="min-w-0 xl:col-span-3"><Panel title={`月度渠道结构（${metric}）`} subtitle="按渠道拆分每月贡献，柱高代表当月规模"><div className="overflow-x-auto"><ChannelStructureChart months={months} product={product} metric={metric} selectedChannel={channel} setChannel={setChannel} /></div></Panel></div>
+        <div className="xl:col-span-2"><Panel title="数据提醒" subtitle="根据当前筛选条件自动识别波动与退货">
+          <div className="space-y-3 text-sm leading-6">
+            {Number.isFinite(latestMoM) && latestMoM <= -0.2 ? <Alert text={`${months[months.length - 1]}${metric}较上月下降${Math.abs(latestMoM * 100).toFixed(1)}%，建议核查渠道订单与库存。`} /> : null}
+            {returns.map(item => <Alert key={`${item.month}-${item.channel}`} text={`${item.month}｜${item.channel}出现退货：${Math.abs(item.qty)}件，金额${hkMoney(Math.abs(item.amount))}。`} />)}
+            {(!Number.isFinite(latestMoM) || latestMoM > -0.2) && returns.length === 0 ? <p className="rounded-lg bg-green-50 p-3 text-green-800">当前筛选范围暂无明显下降或退货异常。</p> : null}
+          </div>
+        </Panel></div>
+      </div>
+
+      <Panel title="渠道表现" subtitle={`汇总${period}；“最新月客户数”按产品分别去重后合计`}>
         <div className="overflow-x-auto rounded-lg border border-line">
-          <table className="w-full min-w-[760px] border-collapse text-sm">
-            <thead className="bg-slate-50 text-left text-xs text-muted">
-              <tr>
-                {["月份", "公牛牌销售额", "活络油销售额", "合计销售额", "公牛牌开票数量", "活络油开票数量"].map(head => (
-                  <th key={head} className="border-b border-line px-3 py-3 font-semibold">{head}</th>
-                ))}
+          <table className="w-full min-w-[900px] border-collapse text-sm">
+            <thead className="bg-slate-50 text-left text-xs text-muted"><tr>{["渠道", "筛选期销售额", "销售占比", "开票数量", "单据数", "最新月销售额", "最新月客户数"].map(head => <th key={head} className="border-b border-line px-3 py-3 font-semibold">{head}</th>)}</tr></thead>
+            <tbody>{channelSummary.map(item => (
+              <tr key={item.name} className={channel === item.name ? "bg-blue-50" : ""}>
+                <td className="border-b border-line px-3 py-3"><button onClick={() => setChannel(channel === item.name ? "全部渠道" : item.name)} className="font-semibold text-blue-700 hover:underline">{item.name}</button></td>
+                <td className="border-b border-line px-3 py-3">{hkMoney(item.amount)}</td>
+                <td className="border-b border-line px-3 py-3">{channelTotal ? `${((item.amount / channelTotal) * 100).toFixed(1)}%` : "—"}</td>
+                <td className={`border-b border-line px-3 py-3 ${item.qty < 0 ? "font-semibold text-red-700" : ""}`}>{number(item.qty)}</td>
+                <td className="border-b border-line px-3 py-3">{number(item.orders)}</td>
+                <td className={`border-b border-line px-3 py-3 ${item.latestAmount < 0 ? "font-semibold text-red-700" : ""}`}>{hkMoney(item.latestAmount)}</td>
+                <td className="border-b border-line px-3 py-3">{number(item.customers)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {recentRows.map(item => (
-                <tr key={item.month}>
-                  <td className="border-b border-line px-3 py-3 font-semibold text-ink">{item.month}</td>
-                  <td className="border-b border-line px-3 py-3">{hkMoney(item.bullAmount)}</td>
-                  <td className="border-b border-line px-3 py-3">{hkMoney(item.oilAmount)}</td>
-                  <td className="border-b border-line px-3 py-3 font-semibold">{hkMoney(item.bullAmount + item.oilAmount)}</td>
-                  <td className="border-b border-line px-3 py-3">{number(item.bullQty)}</td>
-                  <td className={`border-b border-line px-3 py-3 ${item.oilQty < 0 ? "font-semibold text-red-700" : ""}`}>{number(item.oilQty)}</td>
-                </tr>
-              ))}
-            </tbody>
+            ))}</tbody>
           </table>
         </div>
-        <p className="mt-3 text-xs text-muted">数据来源：{salesMeta.source}</p>
+        <p className="mt-3 text-xs text-muted">数据来源：{salesMeta.source}｜{salesMeta.note}</p>
       </Panel>
     </div>
   );
+}
+
+function FilterSelect({ label, value, setValue, options }) {
+  return <label className="text-sm font-semibold text-slate-700"><span className="mb-1.5 block text-xs text-muted">{label}</span><select value={value} onChange={event => setValue(event.target.value)} className="w-full rounded-md border border-line bg-white px-3 py-2.5 font-normal">{options.map(option => <option key={option}>{option}</option>)}</select></label>;
+}
+
+function Alert({ text }) {
+  return <p className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-yellow-900">{text}</p>;
 }
 
 function AiPage() {
