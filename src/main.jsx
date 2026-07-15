@@ -92,8 +92,7 @@ function Shell({ page, setPage, children }) {
     ["jzt", "济众堂"],
     ["sales", "销售分析"],
     ["risks", "风险中心"],
-    ["support", "资源需求"],
-    ["ai", "AI问答"]
+    ["support", "资源需求"]
   ];
 
   return (
@@ -828,64 +827,6 @@ function Alert({ text }) {
   return <p className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-yellow-900">{text}</p>;
 }
 
-function AiPage() {
-  const [messages, setMessages] = useState([
-    { role: "ai", text: "你好，我是增长看板AI助手。当前为静态演示版，可先基于页面数据回答固定方向问题。" }
-  ]);
-  const [input, setInput] = useState("");
-
-  function sendMessage() {
-    const text = input.trim();
-    if (!text) return;
-    const reply = text.includes("风险")
-      ? "当前重点风险包括：公牛牌万宁仅9家门店有货、活络油等待万宁恢复上架、保健食品资质暂无明确时间节点。"
-      : text.includes("公牛")
-        ? "公牛牌当前累计增长投入¥116,240，7月上半旬27篇内容投放中；投流资质等待审核，主要卡点是万宁仅9家门店有货。"
-      : text.includes("济众堂")
-          ? "济众堂当前重点是等待活络油于7月20日-25日恢复上架，并继续追踪肝轻松、眼清清资质及确定定位与定价。"
-          : "这个问题后续可接入真实AI和数据库回答。当前静态版建议先查看总览看板、风险中心和资源需求。";
-    setMessages([...messages, { role: "user", text }, { role: "ai", text: reply }]);
-    setInput("");
-  }
-
-  return (
-    <Panel title="AI问答" subtitle="静态聊天窗口，后续可接入真实AI和增长数据库">
-      <div className="mx-auto max-w-3xl rounded-lg border border-line bg-soft p-4">
-        <div className="h-[420px] space-y-3 overflow-auto rounded-lg bg-white p-4">
-          {messages.map((message, index) => (
-            <div key={index} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[78%] rounded-lg px-4 py-3 text-sm leading-6 ${message.role === "user" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-800"}`}>
-                {message.text}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex gap-2">
-          <input
-            value={input}
-            onChange={event => setInput(event.target.value)}
-            onKeyDown={event => {
-              if (event.key === "Enter") sendMessage();
-            }}
-            placeholder="输入问题，例如：公牛牌现在最大的风险是什么？"
-            className="min-w-0 flex-1 rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-          />
-          <button onClick={sendMessage} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
-            发送
-          </button>
-        </div>
-        <div className="mt-3 grid gap-2 text-xs text-muted sm:grid-cols-2">
-          {["公牛牌累计增长投入是多少？", "济众堂现在有哪些风险？", "保健食品上市还缺什么？", "当前需要公司支持什么？"].map(item => (
-            <button key={item} onClick={() => setInput(item)} className="rounded-md border border-line bg-white px-3 py-2 text-left hover:border-blue-300">
-              {item}
-            </button>
-          ))}
-          </div>
-      </div>
-    </Panel>
-  );
-}
-
 function App() {
   const [page, setPage] = useState("home");
 
@@ -898,7 +839,6 @@ function App() {
       {page === "sales" ? <SalesPage /> : null}
       {page === "risks" ? <RisksPage /> : null}
       {page === "support" ? <SupportPage /> : null}
-      {page === "ai" ? <AiPage /> : null}
     </Shell>
   );
 }
