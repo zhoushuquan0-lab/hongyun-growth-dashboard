@@ -297,9 +297,12 @@ function BrandOverviewCard({ brand, selectedBatch, setPage }) {
         <MiniMetric label="近90天品牌搜索量" value={mainProject?.search90d ? number(mainProject.search90d) : "待补充"} />
         <MiniMetric label="近90天品牌搜索环比" value={mainProject?.searchGrowth90d || "待补充"} />
         <MiniMetric label="淘宝搜索人气值" value={mainProject?.taobaoSearch || "待补充"} />
-        <MiniMetric label="淘宝近30天销量环比" value={mainProject?.taobaoSalesGrowth30d || "待补充"} />
-        <MiniMetric label="万宁近90天销量环比" value={mainProject?.manningSalesGrowth90d || "待补充"} />
+        <MiniMetric label="电商近30天销售额环比" value={mainProject?.ecommerceSalesGrowth30d || "待补充"} />
+        <MiniMetric label="电商近90天销售额环比" value={mainProject?.ecommerceSalesGrowth90d || "待补充"} />
+        <MiniMetric label="万宁近30天销售额环比" value={mainProject?.manningSalesGrowth30d || "待补充"} />
+        <MiniMetric label="万宁近90天销售额环比" value={mainProject?.manningSalesGrowth90d || "待补充"} />
       </div>
+      <p className="mt-3 text-xs leading-5 text-muted">渠道销售环比采用公司开票／出货销售额口径：近30天为2026年6月对比5月，近90天为2026年4–6月对比1–3月。</p>
     </button>
   );
 }
