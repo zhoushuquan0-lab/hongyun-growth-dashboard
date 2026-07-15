@@ -7,8 +7,10 @@ import {
   dashboardKpis,
   dashboardMeta,
   focusProjects,
+  monthlySales,
   overviewProjects,
   risks,
+  salesMeta,
   supportItems
 } from "./data.js";
 
@@ -54,6 +56,16 @@ function number(value, suffix = "") {
   return `${new Intl.NumberFormat("zh-CN").format(value)}${suffix}`;
 }
 
+function hkMoney(value) {
+  if (value === null || value === undefined) return "待补充";
+  return `HK$${new Intl.NumberFormat("zh-HK", { maximumFractionDigits: 0 }).format(value)}`;
+}
+
+function percent(value) {
+  if (!Number.isFinite(value)) return "待补充";
+  return `${value > 0 ? "+" : ""}${(value * 100).toFixed(1)}%`;
+}
+
 function StatusBadge({ status, text }) {
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusStyles[status]}`}>
@@ -77,6 +89,7 @@ function Shell({ page, setPage, children }) {
     ["overview", "项目总览"],
     ["bull", "公牛牌"],
     ["jzt", "济众堂"],
+    ["sales", "销售趋势"],
     ["risks", "风险中心"],
     ["support", "资源需求"],
     ["ai", "AI问答"]
@@ -584,6 +597,117 @@ function SupportPage() {
   );
 }
 
+function SalesTrendChart() {
+  const width = 1000;
+  const height = 360;
+  const margin = { top: 20, right: 24, bottom: 54, left: 76 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+  const maxValue = Math.ceil(Math.max(...monthlySales.flatMap(item => [item.bullAmount, item.oilAmount])) / 100000) * 100000;
+  const x = index => margin.left + (index / (monthlySales.length - 1)) * plotWidth;
+  const y = value => margin.top + plotHeight - (value / maxValue) * plotHeight;
+  const bullPoints = monthlySales.map((item, index) => `${x(index)},${y(item.bullAmount)}`).join(" ");
+  const oilPoints = monthlySales.map((item, index) => `${x(index)},${y(item.oilAmount)}`).join(" ");
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(ratio => ratio * maxValue);
+
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap gap-5 text-sm">
+        <div className="flex items-center gap-2"><span className="h-0.5 w-6 bg-blue-700" />公牛牌风痛灵</div>
+        <div className="flex items-center gap-2"><span className="h-0.5 w-6 bg-orange-500" />济众堂百步追风活络油</div>
+      </div>
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[760px]" role="img" aria-label="2025年4月至2026年6月两款产品月度销售额趋势，单位为港币">
+          <title>月度销售额趋势（港币）</title>
+          {yTicks.map(tick => (
+            <g key={tick}>
+              <line x1={margin.left} x2={width - margin.right} y1={y(tick)} y2={y(tick)} stroke="#E4E7EC" strokeWidth="1" />
+              <text x={margin.left - 12} y={y(tick) + 4} textAnchor="end" fontSize="12" fill="#667085">
+                {tick === 0 ? "HK$0" : `HK$${Math.round(tick / 1000)}k`}
+              </text>
+            </g>
+          ))}
+          {monthlySales.map((item, index) => (
+            <text key={item.month} x={x(index)} y={height - 20} textAnchor="middle" fontSize="11" fill="#667085">
+              {item.month.slice(2)}
+            </text>
+          ))}
+          <polyline points={bullPoints} fill="none" stroke="#1D4ED8" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+          <polyline points={oilPoints} fill="none" stroke="#F97316" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+          {monthlySales.map((item, index) => (
+            <g key={`points-${item.month}`}>
+              <circle cx={x(index)} cy={y(item.bullAmount)} r="4" fill="#1D4ED8">
+                <title>{`${item.month} 公牛牌风痛灵：${hkMoney(item.bullAmount)}`}</title>
+              </circle>
+              <circle cx={x(index)} cy={y(item.oilAmount)} r="4" fill="#F97316">
+                <title>{`${item.month} 济众堂百步追风活络油：${hkMoney(item.oilAmount)}`}</title>
+              </circle>
+            </g>
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function SalesPage() {
+  const latest = monthlySales[monthlySales.length - 1];
+  const previous = monthlySales[monthlySales.length - 2];
+  const latestTotal = latest.bullAmount + latest.oilAmount;
+  const previousTotal = previous.bullAmount + previous.oilAmount;
+  const totalMoM = latestTotal / previousTotal - 1;
+  const bullMoM = latest.bullAmount / previous.bullAmount - 1;
+  const oilMoM = latest.oilAmount / previous.oilAmount - 1;
+  const recentRows = monthlySales.slice(-6).reverse();
+
+  return (
+    <div className="space-y-5">
+      <Panel title="销售趋势" subtitle={`${salesMeta.period}｜币种：港币｜数据更新至${salesMeta.latestMonth}`}>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <MiniMetric label="2026年6月总销售额" value={hkMoney(latestTotal)} />
+          <MiniMetric label="总销售额月环比" value={percent(totalMoM)} />
+          <MiniMetric label="公牛牌6月销售额" value={`${hkMoney(latest.bullAmount)}｜${percent(bullMoM)}`} />
+          <MiniMetric label="活络油6月销售额" value={`${hkMoney(latest.oilAmount)}｜${percent(oilMoM)}`} />
+        </div>
+        <p className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm leading-6 text-yellow-900">
+          6月总销售额较5月下降{Math.abs(totalMoM * 100).toFixed(1)}%。其中公牛牌下降{Math.abs(bullMoM * 100).toFixed(1)}%，活络油下降{Math.abs(oilMoM * 100).toFixed(1)}%；活络油6月包含万宁退货326件，净开票数量为-31。
+        </p>
+      </Panel>
+
+      <Panel title="月度销售额趋势（港币）" subtitle="双产品按月对比，后续每月追加当月销售数据">
+        <SalesTrendChart />
+      </Panel>
+
+      <Panel title="最近6个月销售明细" subtitle={salesMeta.note}>
+        <div className="overflow-x-auto rounded-lg border border-line">
+          <table className="w-full min-w-[760px] border-collapse text-sm">
+            <thead className="bg-slate-50 text-left text-xs text-muted">
+              <tr>
+                {["月份", "公牛牌销售额", "活络油销售额", "合计销售额", "公牛牌开票数量", "活络油开票数量"].map(head => (
+                  <th key={head} className="border-b border-line px-3 py-3 font-semibold">{head}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {recentRows.map(item => (
+                <tr key={item.month}>
+                  <td className="border-b border-line px-3 py-3 font-semibold text-ink">{item.month}</td>
+                  <td className="border-b border-line px-3 py-3">{hkMoney(item.bullAmount)}</td>
+                  <td className="border-b border-line px-3 py-3">{hkMoney(item.oilAmount)}</td>
+                  <td className="border-b border-line px-3 py-3 font-semibold">{hkMoney(item.bullAmount + item.oilAmount)}</td>
+                  <td className="border-b border-line px-3 py-3">{number(item.bullQty)}</td>
+                  <td className={`border-b border-line px-3 py-3 ${item.oilQty < 0 ? "font-semibold text-red-700" : ""}`}>{number(item.oilQty)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-xs text-muted">数据来源：{salesMeta.source}</p>
+      </Panel>
+    </div>
+  );
+}
+
 function AiPage() {
   const [messages, setMessages] = useState([
     { role: "ai", text: "你好，我是增长看板AI助手。当前为静态演示版，可先基于页面数据回答固定方向问题。" }
@@ -651,6 +775,7 @@ function App() {
       {page === "overview" ? <ProjectOverview setPage={setPage} /> : null}
       {page === "bull" ? <BullPage /> : null}
       {page === "jzt" ? <JztPage /> : null}
+      {page === "sales" ? <SalesPage /> : null}
       {page === "risks" ? <RisksPage /> : null}
       {page === "support" ? <SupportPage /> : null}
       {page === "ai" ? <AiPage /> : null}

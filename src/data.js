@@ -1,10 +1,36 @@
 export const dashboardMeta = {
   title: "周树权工作看板",
-  version: "V0.1.3",
+  version: "V0.2",
   updatedAt: "2026-07-15",
   owner: "周树权",
   coreGoals: ["提升品牌知名度", "提升万宁渠道销量", "推动线上电商增长"]
 };
+
+export const salesMeta = {
+  currency: "HKD",
+  period: "2025-04 至 2026-06",
+  latestMonth: "2026-06",
+  source: "全渠道风痛灵及百步追风活络油销售统计.xlsx",
+  note: "销售金额采用原始销售记录净额，已纳入退货及冲销。"
+};
+
+export const monthlySales = [
+  { month: "2025-04", bullAmount: 403843.39, oilAmount: 99873.16, bullQty: 3169, oilQty: 1422 },
+  { month: "2025-05", bullAmount: 675400.27, oilAmount: 62019.01, bullQty: 5202, oilQty: 274 },
+  { month: "2025-06", bullAmount: 390095.39, oilAmount: 84686.36, bullQty: 2987, oilQty: 1462 },
+  { month: "2025-07", bullAmount: 235530.00, oilAmount: 47688.19, bullQty: 1950, oilQty: 160 },
+  { month: "2025-08", bullAmount: 335167.79, oilAmount: 82937.65, bullQty: 2679, oilQty: 531 },
+  { month: "2025-09", bullAmount: 439010.34, oilAmount: 78918.88, bullQty: 3337, oilQty: 787 },
+  { month: "2025-10", bullAmount: 233031.04, oilAmount: 62794.69, bullQty: 1822, oilQty: 254 },
+  { month: "2025-11", bullAmount: 200633.91, oilAmount: 61583.40, bullQty: 1578, oilQty: 413 },
+  { month: "2025-12", bullAmount: 281178.86, oilAmount: 106804.18, bullQty: 2172, oilQty: 1809 },
+  { month: "2026-01", bullAmount: 269641.24, oilAmount: 111762.30, bullQty: 2038, oilQty: 1586 },
+  { month: "2026-02", bullAmount: 324491.22, oilAmount: 53876.85, bullQty: 2580, oilQty: 248 },
+  { month: "2026-03", bullAmount: 548133.02, oilAmount: 54938.55, bullQty: 4331, oilQty: 366 },
+  { month: "2026-04", bullAmount: 456722.22, oilAmount: 75907.33, bullQty: 3600, oilQty: 1610 },
+  { month: "2026-05", bullAmount: 510795.52, oilAmount: 92470.13, bullQty: 4188, oilQty: 1186 },
+  { month: "2026-06", bullAmount: 338025.53, oilAmount: 17774.72, bullQty: 2563, oilQty: -31 }
+];
 
 export const dashboardKpis = {
   totalInvestment: 133470,
